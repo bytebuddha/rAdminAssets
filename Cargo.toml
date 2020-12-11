@@ -8,5 +8,5 @@ edition = "2018"
 
 [dependencies]
 rocket = "*"
-rsass = "0.16.0"
+sass-rs = "*"
 radmin = { path = "../rAdmin" }
