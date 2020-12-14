@@ -9,4 +9,10 @@ edition = "2018"
 [dependencies]
 rocket = "*"
 sass-rs = "*"
+anyhow = "*"
+swc_bundler = "*"
+swc_common = "*"
+swc_ecma_ast = "*"
+swc_ecma_codegen = "*"
+swc_ecma_parser = "*"
 radmin = { path = "../rAdmin" }

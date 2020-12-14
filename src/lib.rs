@@ -1,8 +1,9 @@
 #![feature(decl_macro)]
 
+use radmin::rocket::http::Status;
 use radmin::rocket::{Config, Route, State};
 use radmin::modules::{ServerModule, RoutesModule, CliModule};
-use radmin::{crate_name, crate_version, ServerError, ApiResponse};
+use radmin::{crate_name, crate_version, ServerError};
 
 use std::env::var;
 use std::path::PathBuf;
@@ -12,6 +13,7 @@ use std::io::Write;
 use radmin::clap::{App, ArgMatches, SubCommand, AppSettings};
 use std::fs::File;
 
+mod bundler;
 
 #[derive(Default)]
 pub struct AssetsModule;
@@ -53,10 +55,10 @@ impl RoutesModule for AssetsRoutesModule {
 }
 
 #[radmin::rocket::get("/<file_name..>", rank = 2)]
-fn get_asset_file(cfg: State<Config>, file_name: PathBuf) ->Result<NamedFile, ApiResponse> {
+fn get_asset_file(cfg: State<Config>, file_name: PathBuf) ->Result<NamedFile, Status> {
     let mut asset_dir: PathBuf = cfg.extras.get("assets_dir").unwrap().as_str().unwrap().into();
     asset_dir.push(file_name);
-    NamedFile::open(&asset_dir).map_err(|_| ApiResponse::not_found())
+    NamedFile::open(&asset_dir).map_err(|_| Status::NotFound)
 }
 
 
@@ -84,6 +86,24 @@ impl CliModule for AssetsCliModule {
 
 fn handle_build() -> Result<(), ServerError > {
     build_styles()?;
+    build_javascript()?;
+    Ok(())
+}
+
+fn build_javascript() -> Result<(), ServerError> {
+    let js_dir = var("JS_DIR").unwrap_or_else(|_| "js".into());
+    let files = std::fs::read_dir(js_dir)?
+            .map(|item|item.unwrap().path()).filter(|entry| {
+        let file_name = entry.file_name().unwrap().to_os_string().into_string().unwrap();
+        let metadata = entry.metadata().unwrap();
+        if !file_name.starts_with("_") &&
+           !file_name.starts_with(".") && metadata.is_file() {
+            true
+        } else {
+            false
+        }
+    }).collect::<Vec<PathBuf>>();
+    bundler::bundle(files)?;
     Ok(())
 }
 
