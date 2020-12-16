@@ -7,6 +7,7 @@ use swc_ecma_ast::KeyValueProp;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use swc_ecma_parser::{lexer::Lexer, EsConfig, Parser, StringInput, Syntax};
 use anyhow::Error;
+use termion::{ color, style };
 
 struct Noop;
 
@@ -85,6 +86,8 @@ pub fn bundle(files: Vec<PathBuf>) -> Result<(), ServerError> {
 
     let js_out_dir: PathBuf = std::env::var("ASSETS_DIR").unwrap_or_else(|_| "assets".into()).into();
 
+    println!("{}Writing JS files{}:", color::Fg(color::Green), color::Fg(color::Reset));
+
     for file in files {
         let mut entries = HashMap::default();
         entries.insert("main".to_string(), FileName::Real(file.clone().into()));
@@ -112,7 +115,19 @@ pub fn bundle(files: Vec<PathBuf>) -> Result<(), ServerError> {
         };
 
         emitter.emit_module(&bundle.module)?;
-        println!("Wrote Bundled file {:?} into {:?}.", file, out_file);
+        println!(
+            "    {}✓{} {}{:?}{} {}->{} {}{:?}{}",
+            color::Fg(color::Green),
+            color::Fg(color::Reset),
+            style::Italic,
+            file,
+            style::Reset,
+            color::Fg(color::Cyan),
+            color::Fg(color::Reset),
+            style::Italic,
+            out_file,
+            style::Reset
+        );
     }
     Ok(())
 }
